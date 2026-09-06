@@ -60,7 +60,7 @@ function ReportsOverview() {
                 <XAxis dataKey="day" tick={{ fill: "#74685f", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "#74685f", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  formatter={(v: number) => money(v)}
+                  formatter={(v) => money(Number(v ?? 0))}
                   contentStyle={{ background: "#fbf7f2", border: "1px solid #e0d4c6", borderRadius: 12 }}
                 />
                 <Bar dataKey="total" fill="#c6a25a" radius={[6, 6, 0, 0]} />
@@ -82,7 +82,7 @@ function ReportsOverview() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(v: number) => money(v)}
+                    formatter={(v) => money(Number(v ?? 0))}
                     contentStyle={{ background: "#fbf7f2", border: "1px solid #e0d4c6", borderRadius: 12 }}
                   />
                 </PieChart>

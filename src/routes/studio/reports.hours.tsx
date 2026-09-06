@@ -174,7 +174,7 @@ function HoursReportPage() {
         </div>
         <div className="rounded-xl bg-secondary/60 px-4 py-3">
           <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Busiest chair</p>
-          <p className="mt-1 font-serif text-3xl">{hoursRows[0] && hoursRows[0].minutes > 0 ? hoursRows[0].short : "—"}</p>
+          <p className="mt-1 font-serif text-3xl">{hoursRows[0] && hoursRows[0].minutes > 0 ? hoursRows[0].short : "\u2014"}</p>
         </div>
       </div>
 
@@ -185,7 +185,7 @@ function HoursReportPage() {
             <XAxis type="number" tick={{ fill: "#74685f", fontSize: 12 }} axisLine={false} tickLine={false} unit=" hr" />
             <YAxis type="category" dataKey="short" tick={{ fill: "#74685f", fontSize: 12 }} axisLine={false} tickLine={false} width={72} />
             <Tooltip
-              formatter={(v: number) => [`${v} hr`, "Booked"]}
+              formatter={(v) => [`${Number(v ?? 0)} hr`, "Booked"]}
               contentStyle={{ background: "#fbf7f2", border: "1px solid #e0d4c6", borderRadius: 12 }}
             />
             <Bar dataKey="hours" radius={[0, 6, 6, 0]}>
@@ -207,7 +207,10 @@ function HoursReportPage() {
                 <XAxis dataKey="label" tick={{ fill: "#74685f", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "#74685f", fontSize: 12 }} axisLine={false} tickLine={false} unit=" hr" />
                 <Tooltip
-                  formatter={(v: number, name: string) => [`${v} hr`, staff.find((s) => s.id === name)?.name.split(" ")[0] ?? name]}
+                  formatter={(v, name) => [
+                    `${Number(v ?? 0)} hr`,
+                    staff.find((s) => s.id === name)?.name.split(" ")[0] ?? String(name ?? ""),
+                  ]}
                   contentStyle={{ background: "#fbf7f2", border: "1px solid #e0d4c6", borderRadius: 12 }}
                 />
                 {staff.map((st, i) => (
@@ -241,7 +244,7 @@ function HoursReportPage() {
                 <td className="py-3 pr-4 tabular-nums">{row.visits}</td>
                 <td className="py-3 pr-4 tabular-nums">{hoursBooked(row.minutes)}</td>
                 <td className="py-3 tabular-nums">
-                  {floorMinutes ? `${Math.round((row.minutes / floorMinutes) * 100)}%` : "—"}
+                  {floorMinutes ? `${Math.round((row.minutes / floorMinutes) * 100)}%` : "\u2014"}
                 </td>
               </tr>
             ))}
