@@ -1,0 +1,44 @@
+name: Import LFS images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch salon images and commit with Git LFS
+        run: |
+          set -euo pipefail
+          git lfs install
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p public/images
+          fetch() {
+            echo "GET $1 -> $2"
+            curl -fsSL "$1" -o "$2"
+            size=$(wc -c < "$2")
+            echo "$2 ${size} bytes"
+            test "$size" -gt 1000
+          }
+          fetch https://litter.catbox.moe/ambpye.png public/logo.png
+          fetch https://litter.catbox.moe/e5759j.png public/logo-light.png
+          fetch https://litter.catbox.moe/sv5f7v.jpg public/og.jpg
+          fetch https://litter.catbox.moe/ab9w58.jpg public/images/color.jpg
+          fetch https://litter.catbox.moe/ypwi14.jpg public/images/gift.jpg
+          fetch https://litter.catbox.moe/au99f5.jpg public/images/hair.jpg
+          fetch https://litter.catbox.moe/pgoxy7.jpg public/images/hero.jpg
+          fetch https://litter.catbox.moe/vop3ah.jpg public/images/makeup.jpg
+          fetch https://litter.catbox.moe/o1jh0a.jpg public/images/nails.jpg
+          fetch https://litter.catbox.moe/oo5roc.jpg public/images/products.jpg
+          fetch https://litter.catbox.moe/ok4whu.jpg public/images/spa.jpg
+          git lfs track "public/logo.png" "public/logo-light.png" "public/og.jpg" "public/images/*.jpg"
+          git add .gitattributes public/logo.png public/logo-light.png public/og.jpg public/images/*.jpg
+          git status
+          git lfs ls-files
+          git commit -m "Add salon logos and photos via Git LFS"
+          git push

@@ -6,7 +6,12 @@ Public site covers the menu, team, online booking, shop, and gift cards. Studio 
 
 ## Run locally
 
+Photos and logos are stored with [Git LFS](https://git-lfs.com). Install it once, then clone:
+
 ```bash
+git lfs install
+git clone https://github.com/krlloyd/enlightenedbeauty.git
+cd enlightenedbeauty
 npm install
 npm run dev
 ```
