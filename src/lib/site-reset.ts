@@ -5,9 +5,10 @@ export async function wipeSiteData() {
   const { getSql } = await import("./db");
   const sql = await getSql();
   const statements = [
+    `delete from salon_cloud_files`,
     `delete from salon_backups`,
     `delete from studio_members`,
-    `update salon_state set production = false, backup_cadence = 'daily', payload = '{}'::jsonb, updated_at = now() where id = 'salon'`,
+    `update salon_state set production = false, backup_cadence = 'daily', payload = '{}'::jsonb, cloud_kind = 'off', cloud_config = '{}'::jsonb, cloud_error = null, last_cloud_at = null, updated_at = now() where id = 'salon'`,
     `insert into salon_state (id) values ('salon') on conflict (id) do nothing`,
     `delete from "session"`,
     `delete from "account"`,

@@ -37,6 +37,8 @@ Going live:
 
 **Backups** copy the book, clients, tickets, and menu. Schedule is off, every day, or every week. A copy is saved on that schedule whenever someone is signed in at the desk. You can also save one now, download a JSON file, or restore a copy. The last thirty copies are kept.
 
+**Cloud copies** send the same JSON off this server. Owner Settings can use Google Drive (when the site is opened through Grok) or an S3-compatible bucket (Amazon S3, Cloudflare R2, Backblaze) on your own host. Copies stay private — not GitHub, not a public link. You can import a JSON file you already have. Bucket secrets are stored encrypted; Drive writes go into a folder named Enlightened Beauty backups. The off-site list follows the files actually in Drive or the bucket — copies deleted there drop off the list when Settings opens or you refresh.
+
 ## Run locally
 
 Photos and logos are stored with [Git LFS](https://git-lfs.com). Install it once, then clone:

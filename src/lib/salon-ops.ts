@@ -144,6 +144,12 @@ async function insertBackup(
   for (const row of extra) {
     await sql.query(`delete from salon_backups where id = $1`, [row.id]);
   }
+  try {
+    const { pushCloudCopy } = await import("./salon-cloud");
+    await pushCloudCopy(sql, payload, note);
+  } catch (err) {
+    console.warn("[salon-ops] cloud copy skipped", err);
+  }
 }
 
 async function deskState(sql: Awaited<ReturnType<typeof import("./db").getSql>>): Promise<SalonDeskState> {
@@ -238,6 +244,24 @@ export const createSalonBackup = createServerFn({ method: "POST" })
     await insertBackup(sql, payload, "manual", data.note);
     const last = await lastBackupAt(sql);
     return { id: "ok", createdAt: last ?? new Date().toISOString() };
+  });
+
+export const importSalonBackup = createServerFn({ method: "POST" })
+  .validator((d: { payload: SalonPayload; note?: string }) => {
+    const payload = pickSalonPayload(d?.payload ?? {});
+    if (!payload) throw new Error("That file is not a salon backup.");
+    return { payload, note: String(d?.note ?? "Imported JSON").slice(0, 120) };
+  })
+  .middleware([authMiddleware])
+  .handler(async ({ context, data }): Promise<SalonDeskState> => {
+    const { getSql } = await import("./db");
+    const sql = await getSql();
+    await requireDeskOwner(sql, context.userId);
+    const current = await loadState(sql);
+    if (current.payload) await insertBackup(sql, current.payload, "manual", "Before import");
+    await writePayload(sql, data.payload);
+    await insertBackup(sql, data.payload, "manual", data.note);
+    return deskState(sql);
   });
 
 export const runScheduledBackup = createServerFn({ method: "POST" })
