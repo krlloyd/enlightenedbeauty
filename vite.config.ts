@@ -1,5 +1,6 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -11,6 +12,12 @@ import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
+import {
+  firstHeaderValue,
+  httpsRedirectLocation,
+  httpsResponseHeaders,
+  type HttpsView,
+} from "./src/lib/https.ts";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -19,6 +26,55 @@ function hasGlobbedMigrations(root: string): boolean {
   } catch {
     return false;
   }
+}
+
+function httpsViewFromNode(req: IncomingMessage): HttpsView {
+  const host =
+    firstHeaderValue(req.headers["x-forwarded-host"]) || firstHeaderValue(req.headers.host) || "";
+  const forwarded = firstHeaderValue(req.headers["x-forwarded-proto"]).toLowerCase();
+  const forwardedProto = forwarded === "https" || forwarded === "http" ? forwarded : "";
+  const path = req.url && req.url.startsWith("/") ? req.url : `/${req.url ?? ""}`;
+  return { host, forwardedProto, path };
+}
+
+function httpsConnect(
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void,
+) {
+  if (req.headers.upgrade) {
+    next();
+    return;
+  }
+  const view = httpsViewFromNode(req);
+  const location = httpsRedirectLocation(view);
+  if (location) {
+    res.statusCode = 308;
+    res.setHeader("Location", location);
+    res.end();
+    return;
+  }
+  for (const [key, value] of Object.entries(httpsResponseHeaders(view))) {
+    if (!res.getHeader(key)) res.setHeader(key, value);
+  }
+  next();
+}
+
+/**
+ * HTTPS for the live preview / vite preview bind. Redirects only when a proxy
+ * reports x-forwarded-proto=http on a non-loopback host — loopback HTTP on
+ * :8080 / :8081 stays as-is so the preview contract is unchanged.
+ */
+function httpsEnforcePlugin(): Plugin {
+  return {
+    name: "enlightened-beauty:https",
+    configureServer(server) {
+      server.middlewares.use(httpsConnect);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(httpsConnect);
+    },
+  };
 }
 
 /**
@@ -158,6 +214,7 @@ export default defineConfig(({ command, isPreview }) => ({
   },
   resolve: { tsconfigPaths: true },
   plugins: [
+    httpsEnforcePlugin(),
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
@@ -175,6 +232,13 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            routeRules: {
+              "/**": {
+                headers: {
+                  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+                },
+              },
+            },
           }),
         ]
       : []),
