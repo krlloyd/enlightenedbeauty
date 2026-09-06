@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { publicOriginFromRequest } from "./https";
 
 export type StripePayInput = {
   amountCents: number;
@@ -20,11 +21,7 @@ export const startStripePay = createServerFn({ method: "POST" })
 
     const { default: Stripe } = await import("stripe");
     const { getRequest } = await import("@tanstack/react-start/server");
-    const request = getRequest();
-    const incoming = new URL(request.url);
-    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? incoming.host;
-    const proto = request.headers.get("x-forwarded-proto") ?? incoming.protocol.replace(":", "") ?? "https";
-    const origin = `${proto}://${host}`;
+    const origin = publicOriginFromRequest(getRequest());
 
     const stripe = new Stripe(key);
     const session = await stripe.checkout.sessions.create({

@@ -4,6 +4,8 @@ Salon booking and studio desk for Enlightened Beauty — 1226 Merryman St, Marin
 
 Public site covers the menu, team, online booking, shop, and gift cards. Studio covers calendar, clients, register, inventory, hours, payments (Stripe + Affirm), and reports.
 
+The live site is served over HTTPS. HTTP visitors are redirected, and browsers are told to keep using HTTPS after that.
+
 ## Run locally
 
 Photos and logos are stored with [Git LFS](https://git-lfs.com). Install it once, then clone:

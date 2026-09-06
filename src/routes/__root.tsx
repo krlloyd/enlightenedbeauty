@@ -1,12 +1,14 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { HydrateGate } from "@/components/hydrate";
 import { SessionKeepAlive } from "@/components/session-keep-alive";
 import { AuthProvider } from "@/lib/auth/provider";
+import { isLoopbackHost } from "@/lib/https";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Enlightened Beauty";
+const PUBLIC_HOST = String(import.meta.env.VITE_PUBLIC_HOSTNAME ?? "").trim();
 
 export const Route = createRootRoute({
   head: () => ({
@@ -16,6 +18,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       { name: "description", content: "Enlightened Beauty — book hair, color, skin, and nails in Marinette." },
       { name: "theme-color", content: "#0A0908" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -33,6 +36,14 @@ export const Route = createRootRoute({
   component: Root,
 });
 
+function HttpsCanonical() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const search = useRouterState({ select: (s) => s.location.searchStr });
+  const host = PUBLIC_HOST && !isLoopbackHost(PUBLIC_HOST) ? PUBLIC_HOST : "";
+  if (!host) return null;
+  return <link rel="canonical" href={`https://${host}${pathname}${search}`} />;
+}
+
 function Root() {
   return (
     <html lang="en" className="antialiased" suppressHydrationWarning>
@@ -40,6 +51,7 @@ function Root() {
         <HeadContent />
       </head>
       <body className="min-h-dvh bg-background text-foreground">
+        <HttpsCanonical />
         <PreviewHostBridge />
         <AuthProvider>
           <SessionKeepAlive />
