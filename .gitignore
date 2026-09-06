@@ -15,3 +15,7 @@ screenshots/
 .DS_Store
 AGENTS.md
 AGENTS.project.md
+*.pem
+*.key
+localhost.pem
+localhost-key.pem

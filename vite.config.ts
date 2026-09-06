@@ -1,9 +1,11 @@
 import { readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -19,6 +21,20 @@ import {
   httpsResponseHeaders,
   type HttpsView,
 } from "./src/lib/https.ts";
+const extraIps = [
+  '127.0.0.1',
+  '0.0.0.0',
+  'localhost',
+  // LAN / phone / other machines — add yours here
+  '192.168.1.1',
+  '192.168.0.1',
+  '10.0.0.1',
+  // example phone or extra host:
+  '192.168.0.62',
+  'cachyserver.local',
+]
+
+
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -213,12 +229,18 @@ export default defineConfig(({ command, isPreview }) => ({
   server: {
     host: "0.0.0.0",
     port: 8080,
-    strictPort: true,
+    strictPort: false,
+    allowedHosts: extraIps,	
+    https: {
+       key: fs.readFileSync("./localhost-key.pem"),
+       cert: fs.readFileSync("./localhost.pem"),
+     },
   },
   preview: {
     host: "127.0.0.1",
     port: 8081,
-    strictPort: true,
+    strictPort: false,
+    allowedHosts: extraIps,
   },
   resolve: {
     tsconfigPaths: true,
@@ -235,6 +257,7 @@ export default defineConfig(({ command, isPreview }) => ({
   },
   plugins: [
     httpsEnforcePlugin(),
+    basicSsl(),
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
