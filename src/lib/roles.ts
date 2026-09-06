@@ -65,6 +65,7 @@ export function permissionForPath(pathname: string): StudioPermission {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path.startsWith("/studio/payments")) return "payments";
   if (path.startsWith("/studio/access")) return "access";
+  if (path.startsWith("/studio/settings")) return "access";
   if (path.startsWith("/studio/inventory")) return "inventory";
   if (path.startsWith("/studio/reports")) return "reports";
   if (path === "/studio/hours" || path.startsWith("/studio/hours/")) return "hours";

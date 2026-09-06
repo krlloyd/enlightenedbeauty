@@ -5,6 +5,7 @@ import { StripeMark } from "@/components/stripe-mark";
 import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
 import { clearPending, claimPending, lastPaid, loadPending, markPaid, releasePending, wasPaid } from "@/lib/pending-pay";
+import { bookVisit } from "@/lib/book-visit";
 import { confirmStripeSession } from "@/lib/stripe-pay";
 import { depositFor, useSalon } from "@/lib/store";
 
@@ -20,7 +21,6 @@ export const Route = createFileRoute("/pay/success")({
 
 function PaySuccessPage() {
   const { pid, session_id } = Route.useSearch();
-  const book = useSalon((s) => s.book);
   const checkout = useSalon((s) => s.checkout);
   const buyProduct = useSalon((s) => s.buyProduct);
   const buyGift = useSalon((s) => s.buyGift);
@@ -70,7 +70,7 @@ function PaySuccessPage() {
       setAmount(pending.amount);
 
       if (pending.kind === "deposit" && pending.book) {
-        const booked = book(pending.book);
+        const booked = await bookVisit({ ...pending.book, depositPaid: true });
         if (!booked.ok) {
           releasePending(pending.id);
           setState("fail");
@@ -132,7 +132,7 @@ function PaySuccessPage() {
     return () => {
       cancelled = true;
     };
-  }, [pid, session_id, book, checkout, buyGift, buyProduct]);
+  }, [pid, session_id, checkout, buyGift, buyProduct]);
 
   return (
     <main className="grid min-h-dvh place-items-center bg-[#f6f9fc] px-4">

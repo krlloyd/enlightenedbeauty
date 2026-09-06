@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { PublicSalonSync } from "@/lib/use-salon-sync";
 import { useSalon } from "@/lib/store";
 
 export function HydrateGate({ children }: { children: ReactNode }) {
@@ -14,5 +15,10 @@ export function HydrateGate({ children }: { children: ReactNode }) {
     return unsub;
   }, []);
 
-  return children;
+  return (
+    <>
+      <PublicSalonSync />
+      {children}
+    </>
+  );
 }

@@ -31,6 +31,7 @@ import { Route as StudioMenuRouteImport } from './routes/studio/menu'
 import { Route as StudioPaymentsRouteImport } from './routes/studio/payments'
 import { Route as StudioPosRouteImport } from './routes/studio/pos'
 import { Route as StudioReportsRouteImport } from './routes/studio/reports'
+import { Route as StudioSettingsRouteImport } from './routes/studio/settings'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as StudioReportsIndexRouteImport } from './routes/studio/reports.index'
 import { Route as StudioReportsHoursRouteImport } from './routes/studio/reports.hours'
@@ -145,6 +146,11 @@ const StudioReportsRoute = StudioReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioSettingsRoute = StudioSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => StudioRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/studio/payments': typeof StudioPaymentsRoute
   '/studio/pos': typeof StudioPosRoute
   '/studio/reports': typeof StudioReportsRouteWithChildren
+  '/studio/settings': typeof StudioSettingsRoute
   '/pay/': typeof PayIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/studio/menu': typeof StudioMenuRoute
   '/studio/payments': typeof StudioPaymentsRoute
   '/studio/pos': typeof StudioPosRoute
+  '/studio/settings': typeof StudioSettingsRoute
   '/pay': typeof PayIndexRoute
   '/studio': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/studio/payments': typeof StudioPaymentsRoute
   '/studio/pos': typeof StudioPosRoute
   '/studio/reports': typeof StudioReportsRouteWithChildren
+  '/studio/settings': typeof StudioSettingsRoute
   '/pay/': typeof PayIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/studio/payments'
     | '/studio/pos'
     | '/studio/reports'
+    | '/studio/settings'
     | '/pay/'
     | '/studio/'
     | '/api/auth/$'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/studio/menu'
     | '/studio/payments'
     | '/studio/pos'
+    | '/studio/settings'
     | '/pay'
     | '/studio'
     | '/api/auth/$'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/studio/payments'
     | '/studio/pos'
     | '/studio/reports'
+    | '/studio/settings'
     | '/pay/'
     | '/studio/'
     | '/api/auth/$'
@@ -490,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioReportsRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/settings': {
+      id: '/studio/settings'
+      path: '/settings'
+      fullPath: '/studio/settings'
+      preLoaderRoute: typeof StudioSettingsRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -552,6 +571,7 @@ interface StudioRouteChildren {
   StudioPaymentsRoute: typeof StudioPaymentsRoute
   StudioPosRoute: typeof StudioPosRoute
   StudioReportsRoute: typeof StudioReportsRouteWithChildren
+  StudioSettingsRoute: typeof StudioSettingsRoute
   StudioIndexRoute: typeof StudioIndexRoute
 }
 
@@ -565,6 +585,7 @@ const StudioRouteChildren: StudioRouteChildren = {
   StudioPaymentsRoute: StudioPaymentsRoute,
   StudioPosRoute: StudioPosRoute,
   StudioReportsRoute: StudioReportsRouteWithChildren,
+  StudioSettingsRoute: StudioSettingsRoute,
   StudioIndexRoute: StudioIndexRoute,
 }
 

@@ -22,6 +22,7 @@ function StudioHome() {
   const staff = useSalon((s) => s.staff);
   const weekHours = useSalon((s) => s.hours);
   const { member, can } = useStudioAccess();
+  const production = useSalon((s) => s.production);
   const [selected, setSelected] = useState<Appointment | null>(null);
 
   const day = useMemo(() => {
@@ -146,10 +147,15 @@ function StudioHome() {
                   <Link to="/studio/access">Desk access</Link>
                 </Button>
               ) : null}
+              {can("access") ? (
+                <Button asChild variant="outline">
+                  <Link to="/studio/settings">Live & backups</Link>
+                </Button>
+              ) : null}
             </div>
-            {can("reset") ? (
+            {can("reset") && !production ? (
               <p className="mt-4 text-xs text-muted-foreground">
-                Demo seed includes Jordan Hale at (715) 555-0142 and a gift card code EB-KATE.
+                Demo seed includes Jordan Hale at (715) 555-0142 and a gift card code EB-KATE. Go live under Settings when you're ready.
               </p>
             ) : (
               <p className="mt-4 text-xs text-muted-foreground">{member ? ROLE_BLURB[member.role] : ""}</p>

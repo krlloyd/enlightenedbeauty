@@ -16,12 +16,26 @@ A specialist login should be linked to a chair on Access so their calendar colum
 
 | Role | What they can do |
 | --- | --- |
-| **Owner** | Full studio. Today, calendar, clients, menu, register, payments, stock, hours, reports, and Access (who can sign in). Can reset the demo seed. |
+| **Owner** | Full studio. Today, calendar, clients, menu, register, payments, stock, hours, reports, Access (who can sign in), and Settings (live mode and backups). Reset demo only while the desk is still in demo. |
 | **Manager** | Floor and book: today, calendar, clients, menu, register, stock, hours, and reports. Cannot open payments or Access. |
 | **Front desk** | The book and the till: today, calendar, clients, and the register. Cannot edit the menu, stock, hours, payments, or reports. |
 | **Specialist** | Their own chair: today and calendar, filtered to the linked specialist. Cannot open the client file, register, or back-office pages. |
 
 Deposits, Affirm eligibility, hours, and the service menu are edited in Studio (owner or manager). Payments settings are owner-only.
+
+## Live mode and backups
+
+The desk starts in **demo** so you can click around with sample clients and visits. Owner opens **Settings** and chooses **Go live** when the real book should take over.
+
+Going live:
+
+- Saves a backup first
+- Removes sample clients, fake visits, tickets, and the EB-KATE gift card
+- Keeps the menu, team, hours, and any real bookings
+- Hides the Reset button
+- Stores the book on the server so the public site and the desk share one calendar
+
+**Backups** copy the book, clients, tickets, and menu. Schedule is off, every day, or every week. A copy is saved on that schedule whenever someone is signed in at the desk. You can also save one now, download a JSON file, or restore a copy. The last thirty copies are kept.
 
 ## Run locally
 

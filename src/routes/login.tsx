@@ -2,12 +2,15 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { SalonLogo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/label";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { unlockStudioSession } from "@/lib/studio-lock";
 import { deskIsClaimed, getMyStudioAccess } from "@/lib/studio-members";
+import { resetSiteData } from "@/lib/site-reset";
+import { clearBrowserSiteData } from "@/lib/site-reset-client";
 import { useClientReady, useStudioLock } from "@/lib/use-studio-lock";
 
 export const Route = createFileRoute("/login")({
@@ -23,19 +26,22 @@ function LoginPage() {
   const locked = useStudioLock();
   const ready = useClientReady();
   const navigate = useNavigate();
-  const [claimed, setClaimed] = useState<boolean | null>(null);
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const [claimed, setClaimed] = useState(initial.claimed);
+  const [mode, setMode] = useState<"in" | "up">(initial.claimed ? "in" : "up");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     let alive = true;
     void deskIsClaimed()
       .then((res) => {
-        if (alive) setClaimed(res.claimed);
+        if (!alive) return;
+        setClaimed(res.claimed);
+        if (!res.claimed) setMode("up");
       })
       .catch(() => {
         if (alive) setClaimed(initial.claimed);
@@ -45,7 +51,7 @@ function LoginPage() {
     };
   }, [initial.claimed]);
 
-  if (isPending || !ready || claimed == null) {
+  if (isPending || !ready) {
     return (
       <main className="grid min-h-dvh place-items-center bg-chrome px-4">
         <div className="h-10 w-48 animate-pulse rounded-full bg-chrome-foreground/10" />
@@ -83,11 +89,24 @@ function LoginPage() {
       try {
         await getMyStudioAccess();
       } catch {
-        /* claim is best-effort; deskIsClaimed also looks at auth accounts */
+        /* first login writes the owner row */
       }
       window.location.assign("/studio");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed.");
+      setBusy(false);
+    }
+  }
+
+  async function startOver() {
+    setBusy(true);
+    setError("");
+    try {
+      await resetSiteData();
+      clearBrowserSiteData();
+      window.location.assign("/login");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not reset the desk.");
       setBusy(false);
     }
   }
@@ -117,7 +136,7 @@ function LoginPage() {
           <p className="mt-6 text-center text-sm text-chrome-foreground/60">Sign-in is disabled.</p>
         ) : (
           <>
-            {activeUser ? (
+            {activeUser && !firstTime ? (
               <div className="mt-8 rounded-2xl bg-chrome-foreground/8 p-4 text-center">
                 <p className="text-sm text-chrome-foreground/70">Already signed in.</p>
                 <p className="mt-1 font-medium">{who}</p>
@@ -128,7 +147,7 @@ function LoginPage() {
             ) : null}
 
             <form onSubmit={(e) => void submit(e)} className="mt-8 space-y-3">
-              {activeUser ? (
+              {activeUser && !firstTime ? (
                 <p className="text-center text-xs text-chrome-foreground/55">Or sign in as someone else</p>
               ) : null}
               {signingUp ? (
@@ -204,9 +223,33 @@ function LoginPage() {
                 </div>
               </>
             ) : null}
+
+            <button
+              type="button"
+              className="mt-8 w-full text-center text-xs text-chrome-foreground/45 underline-offset-4 hover:text-chrome-foreground/70 hover:underline"
+              disabled={busy}
+              onClick={() => setConfirmReset(true)}
+            >
+              Start over — clear logins and sample data
+            </button>
           </>
         )}
       </div>
+      <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
+        <DialogContent title="Start over?">
+          <p className="mt-3 text-sm text-muted-foreground">
+            This clears every staff login, the book, and live mode. First sign-in becomes the owner again.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setConfirmReset(false)}>
+              Keep logins
+            </Button>
+            <Button type="button" disabled={busy} onClick={() => void startOver()}>
+              {busy ? "Clearing…" : "Clear everything"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

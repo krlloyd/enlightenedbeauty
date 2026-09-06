@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { AFFIRM_MIN_DEFAULT } from "./affirm";
 import { DEPOSIT_MIN_DEFAULT, DEPOSIT_RATE, PRODUCTS, SEED_CLIENTS, SERVICES, STAFF, TAX_RATE, WEEK_HOURS, chipForStaff, cloneHours, imageForCategory, imageForProduct, initialsFrom, isStaffChip, normalizeHours, serviceById, skuFromName } from "./catalog";
+import { pickSalonPayload, stripDemoRecords, type BusySlot, type SalonPayload } from "./salon-payload";
 import { ACTIVE_STATUSES, isOpenOn, nextOpenDay, staffBusy } from "./availability";
 import type {
   Appointment,
@@ -138,6 +139,7 @@ export type ProductInput = {
 
 type State = {
   hydrated: boolean;
+  production: boolean;
   appointments: Appointment[];
   clients: Client[];
   products: Product[];
@@ -153,6 +155,19 @@ type State = {
   affirmMin: number;
   hydrate: () => void;
   resetDemo: () => void;
+  applyDesk: (input: { production: boolean; payload: SalonPayload | null }) => void;
+  applyPublic: (input: {
+    production: boolean;
+    staff: Staff[] | null;
+    services: Service[] | null;
+    hours: WeekHours | null;
+    products: Product[] | null;
+    busy: BusySlot[];
+  }) => void;
+  clearDemoRecords: () => void;
+  setProduction: (on: boolean) => void;
+  snapshot: () => SalonPayload | null;
+  applyBooked: (appointment: Appointment, client: Client, visitor?: Visitor) => void;
   setVisitor: (v: Visitor) => void;
   setPendingPay: (p: PendingPay | null) => void;
   setDepositMin: (min: number | null) => void;
@@ -230,6 +245,7 @@ function findOrCreateClient(
 function fresh() {
   const now = new Date();
   return {
+    production: false,
     appointments: buildSeedAppointments(now),
     clients: SEED_CLIENTS.map((c) => ({ ...c })),
     products: PRODUCTS.map((p) => ({ ...p })),
@@ -262,7 +278,69 @@ export const useSalon = create<State>()(
       hydrated: false,
       ...fresh(),
       hydrate: () => set({ hydrated: true }),
-      resetDemo: () => set({ ...fresh(), hydrated: true }),
+      resetDemo: () => {
+        if (get().production) return;
+        set({ ...fresh(), hydrated: true });
+      },
+      snapshot: () => pickSalonPayload(get()),
+      setProduction: (on) => set({ production: on }),
+      clearDemoRecords: () => {
+        const payload = pickSalonPayload(get());
+        if (!payload) return;
+        set({ ...stripDemoRecords(payload) });
+      },
+      applyDesk: (input) => {
+        if (!input.payload) {
+          set({ production: input.production });
+          return;
+        }
+        set({ production: input.production, ...input.payload, hydrated: true });
+      },
+      applyPublic: (input) => {
+        if (!input.production || !input.staff || !input.services || !input.hours) {
+          set({ production: input.production });
+          return;
+        }
+        const visitor = get().visitor;
+        const key = visitor?.phone.replace(/\D/g, "") ?? "";
+        const mine = key
+          ? new Set(get().clients.filter((c) => c.phone.replace(/\D/g, "") === key).map((c) => c.id))
+          : new Set<string>();
+        const keep = get().appointments.filter((a) => mine.has(a.clientId));
+        const taken = new Set(keep.map((a) => `${a.staffId}|${a.start}`));
+        const holds: Appointment[] = input.busy
+          .filter((b) => !taken.has(`${b.staffId}|${b.start}`))
+          .map((b) => ({
+            id: `busy-${b.staffId}-${b.start}`,
+            clientId: "_hold",
+            staffId: b.staffId,
+            serviceId: "",
+            start: b.start,
+            durationMin: b.durationMin,
+            status: "booked",
+            notes: "",
+            depositPaid: false,
+            createdAt: b.start,
+          }));
+        set({
+          production: true,
+          staff: input.staff,
+          services: input.services,
+          hours: input.hours,
+          products: input.products && input.products.length > 0 ? input.products : get().products,
+          appointments: [...keep, ...holds],
+        });
+      },
+      applyBooked: (appointment, client, visitor) => {
+        const clients = get().clients.some((c) => c.id === client.id)
+          ? get().clients.map((c) => (c.id === client.id ? client : c))
+          : [client, ...get().clients];
+        const holdId = `busy-${appointment.staffId}-${appointment.start}`;
+        const appointments = get().appointments.some((a) => a.id === appointment.id)
+          ? get().appointments.map((a) => (a.id === appointment.id ? appointment : a))
+          : [...get().appointments.filter((a) => a.id !== holdId), appointment];
+        set({ clients, appointments, visitor: visitor ?? get().visitor });
+      },
       setVisitor: (v) => set({ visitor: v }),
       setPendingPay: (p) => set({ pendingPay: p }),
       setDepositMin: (min) => set({ depositMin: min == null ? null : Math.max(0, min) }),
@@ -644,7 +722,7 @@ export const useSalon = create<State>()(
       },
     }),
     {
-      name: "enlightened-beauty-v1",
+      name: "enlightened-beauty-v3",
       storage: createJSONStorage(() => {
         if (typeof window === "undefined") {
           return {
@@ -661,6 +739,7 @@ export const useSalon = create<State>()(
         return {
           ...current,
           ...p,
+          production: Boolean(p.production),
           staff: p.staff && p.staff.length > 0 ? p.staff : current.staff,
           services: p.services && p.services.length > 0 ? p.services : current.services,
           hours: normalizeHours(p.hours) ?? current.hours,
@@ -671,6 +750,7 @@ export const useSalon = create<State>()(
         };
       },
       partialize: (s) => ({
+        production: s.production,
         appointments: s.appointments,
         clients: s.clients,
         products: s.products,

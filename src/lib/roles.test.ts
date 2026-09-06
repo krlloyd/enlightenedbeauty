@@ -45,6 +45,7 @@ describe("studio roles", () => {
     assert.equal(permissionForPath("/studio/reports"), "reports");
     assert.equal(permissionForPath("/studio/reports/hours"), "reports");
     assert.equal(permissionForPath("/studio/access"), "access");
+    assert.equal(permissionForPath("/studio/settings"), "access");
   });
 
   it("rejects unknown role strings as specialist, not owner", () => {

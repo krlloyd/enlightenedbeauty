@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Scissors,
   Shield,
+  SlidersHorizontal,
   Users,
   Wallet,
 } from "lucide-react";
@@ -49,11 +50,13 @@ const ITEMS: {
     ],
   },
   { to: "/studio/access", label: "Access", icon: Shield, perm: "access" },
+  { to: "/studio/settings", label: "Settings", icon: SlidersHorizontal, perm: "access" },
 ];
 
 export function StudioShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const resetDemo = useSalon((s) => s.resetDemo);
+  const production = useSalon((s) => s.production);
   const { member, can } = useStudioAccess();
   const nav = ITEMS.filter((item) => can(item.perm));
 
@@ -70,13 +73,16 @@ export function StudioShell({ children }: { children: ReactNode }) {
               {ROLE_LABEL[member.role]}
             </Badge>
           ) : null}
+          <Badge variant={production ? "success" : "warning"} className="hidden sm:inline-flex">
+            {production ? "Live" : "Demo"}
+          </Badge>
           <div className="min-w-0 text-chrome-foreground">
             <DeskAccount />
           </div>
           <Button asChild variant="ghost" size="sm" className="text-chrome-foreground hover:bg-chrome-foreground/10 hover:text-chrome-foreground">
             <Link to="/">Client site</Link>
           </Button>
-          {can("reset") ? (
+          {can("reset") && !production ? (
             <Button
               variant="outline"
               size="sm"

@@ -8,7 +8,9 @@ import { affirmEligible } from "@/lib/affirm";
 import { CATEGORIES, DEPOSIT_RATE } from "@/lib/catalog";
 import { durationLabel, formatPhone, money } from "@/lib/format";
 import { depositFor, needsDeposit, useSalon } from "@/lib/store";
+import { bookVisit } from "@/lib/book-visit";
 import { beginAffirmCheckout, beginStripeCheckout } from "@/lib/pending-pay";
+import type { BookInput } from "@/lib/types";
 import { AffirmMark } from "./affirm-mark";
 import { AffirmPromo } from "./affirm-promo";
 import { AffirmTag } from "./affirm-tag";
@@ -28,7 +30,6 @@ export function BookingFlow({
   const navigate = useNavigate();
   const appointments = useSalon((s) => s.appointments);
   const visitor = useSalon((s) => s.visitor);
-  const book = useSalon((s) => s.book);
   const depositMin = useSalon((s) => s.depositMin);
   const affirmEnabled = useSalon((s) => s.affirmEnabled);
   const affirmMin = useSalon((s) => s.affirmMin);
@@ -105,7 +106,7 @@ export function BookingFlow({
       notes: notes.trim(),
     };
     if (!takeDeposit) {
-      const booked = book({ ...payload, depositPaid: false });
+      const booked = await bookVisit({ ...payload, depositPaid: false });
       if (!booked.ok) {
         toast.error(booked.error);
         return;
@@ -117,7 +118,7 @@ export function BookingFlow({
     await payDeposit("stripe", payload);
   }
 
-  async function payDeposit(provider: "stripe" | "affirm", payload: Parameters<typeof book>[0]) {
+  async function payDeposit(provider: "stripe" | "affirm", payload: BookInput) {
     if (!service) return;
     const deposit = depositDue;
     setPaying(true);

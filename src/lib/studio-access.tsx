@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { can as roleCan, type StudioPermission } from "./roles";
 import { getMyStudioAccess, type StudioMember } from "./studio-members";
+import { StudioDeskSync } from "./use-salon-sync";
 
 type StudioAccessValue = {
   member: StudioMember | null;
@@ -41,7 +42,12 @@ export function StudioAccessProvider({ children }: { children: ReactNode }) {
     [member, isPending, can, reload],
   );
 
-  return <StudioAccessContext.Provider value={value}>{children}</StudioAccessContext.Provider>;
+  return (
+    <StudioAccessContext.Provider value={value}>
+      <StudioDeskSync enabled={!isPending && Boolean(member)} />
+      {children}
+    </StudioAccessContext.Provider>
+  );
 }
 
 export function useStudioAccess() {

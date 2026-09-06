@@ -103,6 +103,24 @@ async function requireOwner(
   return access;
 }
 
+export async function requireDeskMember(
+  sql: Awaited<ReturnType<typeof import("./db").getSql>>,
+  userId: string,
+) {
+  const access = await resolveMember(sql, userId);
+  if (!access) throw new ForbiddenError("This login isn't on the desk.");
+  return access;
+}
+
+export async function requireDeskOwner(
+  sql: Awaited<ReturnType<typeof import("./db").getSql>>,
+  userId: string,
+) {
+  const access = await requireDeskMember(sql, userId);
+  if (access.role !== "owner") throw new ForbiddenError("Only the owner can change that.");
+  return access;
+}
+
 async function resolveMember(
   sql: Awaited<ReturnType<typeof import("./db").getSql>>,
   userId: string,
@@ -127,6 +145,15 @@ async function resolveMember(
 
   const countRows = await sql<{ n: number }>`select count(*)::int as n from studio_members`;
   if ((countRows[0]?.n ?? 0) > 0) return null;
+
+  // Preview Grok sessions must not steal the owner seat — that hid Create account.
+  const providers = await sql.query<{ providerId: string }>(
+    `select "providerId" from account where "userId" = $1`,
+    [userId],
+  );
+  if (providers.length > 0 && providers.every((row) => row.providerId === "grok-gate")) {
+    return null;
+  }
 
   const id = crypto.randomUUID();
   const memberEmail = email || `${userId}@studio.local`;
@@ -163,14 +190,7 @@ export const deskIsClaimed = createServerFn({ method: "POST" }).handler(async ()
   const { getSql } = await import("./db");
   const sql = await getSql();
   const members = await sql<{ n: number }>`select count(*)::int as n from studio_members`;
-  if ((members[0]?.n ?? 0) > 0) return { claimed: true };
-  // First email / Google / X login also claims the desk, even before the owner
-  // row is written. Gate-only viewer sessions are ignored.
-  const accounts = await sql<{ n: number }>`
-    select count(*)::int as n from "account"
-    where "providerId" in (${"credential"}, ${"grok-google"}, ${"grok-x"})
-  `;
-  return { claimed: (accounts[0]?.n ?? 0) > 0 };
+  return { claimed: (members[0]?.n ?? 0) > 0 };
 });
 
 export const getMyStudioAccess = createServerFn({ method: "GET" })

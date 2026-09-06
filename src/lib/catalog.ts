@@ -389,6 +389,25 @@ export const SEED_CLIENTS: Client[] = [
   },
 ];
 
+export const SEED_GIFT_CODE = "EB-KATE";
+export const SEED_CLIENT_IDS = SEED_CLIENTS.map((c) => c.id);
+export const SEED_APPOINTMENT_IDS = [
+  "a1",
+  "a2",
+  "a3",
+  "a4",
+  "a5",
+  "a6",
+  "a7",
+  "a8",
+  "a9",
+  "a10",
+  "a11",
+  "a12",
+  "a13",
+  "a14",
+];
+
 export const REVIEWS = [
   {
     name: "Sasha Q.",
