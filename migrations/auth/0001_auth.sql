@@ -23,7 +23,7 @@ create table if not exists "user" (
   "emailVerified" boolean not null,
   "image" text,
   "createdAt" timestamptz default CURRENT_TIMESTAMP not null,
-  "updatedAt" timestamptz not null
+  "updatedAt" timestamptz default CURRENT_TIMESTAMP not null
 );
 
 create table if not exists "session" (
