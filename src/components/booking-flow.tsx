@@ -194,7 +194,12 @@ export function BookingFlow({
                 >
                   <span>
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className={cn("size-2 rounded-full", on ? "bg-primary" : "bg-border")} />
+                      <span
+                        className={cn(
+                          "size-2 rounded-full",
+                          on ? "bg-primary" : "bg-border",
+                        )}
+                      />
                       <span className="font-medium">{s.name}</span>
                       {qualifies ? <AffirmTag /> : null}
                     </span>
@@ -214,6 +219,7 @@ export function BookingFlow({
       <aside className="lg:sticky lg:top-24 h-fit rounded-2xl bg-card p-5 shadow-[var(--shadow-border)] sm:p-6">
         <form onSubmit={submit} className="flex flex-col gap-4">
           <h2 className="font-serif text-2xl font-medium">Your visit</h2>
+
           <Field label="Specialist">
             <NativeSelect
               value={staffId}
@@ -232,14 +238,31 @@ export function BookingFlow({
               ))}
             </NativeSelect>
           </Field>
+
           <div>
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Date</p>
               <div className="flex gap-1">
-                <Button type="button" variant="ghost" size="icon" className="size-8" disabled={weekStart === 0} onClick={() => setWeekStart((n) => Math.max(0, n - 7))} aria-label="Earlier days">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  disabled={weekStart === 0}
+                  onClick={() => setWeekStart((n) => Math.max(0, n - 7))}
+                  aria-label="Earlier days"
+                >
                   <ChevronLeft className="size-4" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon" className="size-8" disabled={weekStart + 7 >= days.length} onClick={() => setWeekStart((n) => n + 7)} aria-label="Later days">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  disabled={weekStart + 7 >= days.length}
+                  onClick={() => setWeekStart((n) => n + 7)}
+                  aria-label="Later days"
+                >
                   <ChevronRight className="size-4" />
                 </Button>
               </div>
@@ -248,7 +271,18 @@ export function BookingFlow({
               {visibleDays.map((d) => {
                 const on = isSameDay(d, day);
                 return (
-                  <button key={d.toISOString()} type="button" onClick={() => { setDay(d); setSlotIso(""); }} className={cn("flex min-h-16 min-w-12 flex-1 flex-col items-center justify-center rounded-xl px-2 py-2 text-xs transition-colors duration-150", on ? "bg-foreground text-background" : "bg-secondary text-foreground hover:bg-accent")}>
+                  <button
+                    key={d.toISOString()}
+                    type="button"
+                    onClick={() => {
+                      setDay(d);
+                      setSlotIso("");
+                    }}
+                    className={cn(
+                      "flex min-h-16 min-w-12 flex-1 flex-col items-center justify-center rounded-xl px-2 py-2 text-xs transition-colors duration-150",
+                      on ? "bg-foreground text-background" : "bg-secondary text-foreground hover:bg-accent",
+                    )}
+                  >
                     <span className="uppercase tracking-wider opacity-70">{format(d, "EEE")}</span>
                     <span className="font-serif text-lg leading-none">{format(d, "d")}</span>
                   </button>
@@ -256,8 +290,11 @@ export function BookingFlow({
               })}
             </div>
           </div>
+
           <div>
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Available times</p>
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              Available times
+            </p>
             {!service ? (
               <p className="text-sm text-muted-foreground">Choose a service on the left.</p>
             ) : groupedSlots.length === 0 ? (
@@ -267,7 +304,15 @@ export function BookingFlow({
                 {groupedSlots.map(([label, opts]) => {
                   const on = opts.some((o) => o.iso === slotIso);
                   return (
-                    <button key={label} type="button" onClick={() => chooseSlot(opts[0].iso, opts[0].staffId)} className={cn("min-h-10 rounded-xl px-3 text-sm shadow-[var(--shadow-border)] transition-colors duration-150", on ? "bg-foreground text-background" : "bg-card hover:bg-accent")}>
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => chooseSlot(opts[0].iso, opts[0].staffId)}
+                      className={cn(
+                        "min-h-10 rounded-xl px-3 text-sm shadow-[var(--shadow-border)] transition-colors duration-150",
+                        on ? "bg-foreground text-background" : "bg-card hover:bg-accent",
+                      )}
+                    >
                       {label}
                     </button>
                   );
@@ -275,18 +320,32 @@ export function BookingFlow({
               </div>
             )}
           </div>
+
           <Field label="Your name">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jordan Hale" autoComplete="name" />
           </Field>
           <Field label="Mobile">
-            <Input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(715) 555-0142" inputMode="tel" autoComplete="tel" />
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              placeholder="(715) 555-0142"
+              inputMode="tel"
+              autoComplete="tel"
+            />
           </Field>
           <Field label="Email">
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@mail.test" type="email" autoComplete="email" />
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@mail.test"
+              type="email"
+              autoComplete="email"
+            />
           </Field>
           <Field label="Notes for the chair">
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Allergies, references, parking…" />
           </Field>
+
           {service && slotIso ? (
             <div className="rounded-xl bg-secondary/70 px-4 py-3 text-sm">
               <p className="font-medium">{service.name}</p>
@@ -295,21 +354,48 @@ export function BookingFlow({
                 {specialist ? ` · ${specialist.name}` : ""}
               </p>
               <p className="mt-1">
-                {takeDeposit ? `${money(service.price)} · deposit ${money(depositDue)} due now` : `${money(service.price)} due in the chair`}
+                {takeDeposit
+                  ? `${money(service.price)} · deposit ${money(depositDue)} due now`
+                  : `${money(service.price)} due in the chair`}
               </p>
               {offerAffirm ? <div className="mt-2"><AffirmPromo amount={depositDue} /></div> : null}
             </div>
           ) : null}
+
           <Button type="submit" variant="ink" className="w-full" disabled={paying}>
-            {takeDeposit && service ? (paying ? "Opening checkout…" : `Pay ${money(depositDue)} deposit with Stripe`) : "Confirm booking"}
+            {takeDeposit && service
+              ? paying
+                ? "Opening checkout…"
+                : `Pay ${money(depositDue)} deposit with Stripe`
+              : "Confirm booking"}
           </Button>
           {offerAffirm ? (
-            <Button type="button" variant="outline" className="w-full" disabled={paying} onClick={() => {
-              if (!service || !slotIso) { toast.error("Pick a service and a time."); return; }
-              const who = assignedStaff || (staffId === "any" ? "" : staffId);
-              if (!who || !name.trim() || phone.replace(/\D/g, "").length < 10) { toast.error("Name and a 10-digit mobile are required."); return; }
-              void payDeposit("affirm", { serviceId: service.id, staffId: who, start: slotIso, name: name.trim(), phone: formatPhone(phone), email: email.trim(), notes: notes.trim() });
-            }}>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={paying}
+              onClick={() => {
+                if (!service || !slotIso) {
+                  toast.error("Pick a service and a time.");
+                  return;
+                }
+                const who = assignedStaff || (staffId === "any" ? "" : staffId);
+                if (!who || !name.trim() || phone.replace(/\D/g, "").length < 10) {
+                  toast.error("Name and a 10-digit mobile are required.");
+                  return;
+                }
+                void payDeposit("affirm", {
+                  serviceId: service.id,
+                  staffId: who,
+                  start: slotIso,
+                  name: name.trim(),
+                  phone: formatPhone(phone),
+                  email: email.trim(),
+                  notes: notes.trim(),
+                });
+              }}
+            >
               <AffirmMark className="h-4 w-auto" />
               Pay over time
             </Button>
@@ -324,7 +410,9 @@ export function BookingFlow({
           )}
           <p className="text-center text-xs text-muted-foreground">
             Already booked?{" "}
-            <Link to="/visits" className="underline underline-offset-2">See your visits</Link>
+            <Link to="/visits" className="underline underline-offset-2">
+              See your visits
+            </Link>
           </p>
         </form>
       </aside>

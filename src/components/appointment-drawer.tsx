@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { durationLabel, money, whenLabel } from "@/lib/format";
 import { statusMeta } from "@/lib/status";
 import { clientById, useSalon } from "@/lib/store";
+import { useStudioAccess } from "@/lib/studio-access";
 import type { Appointment, AppointmentStatus } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -25,6 +26,7 @@ export function AppointmentDrawer({
   const setStatus = useSalon((s) => s.setStatus);
   const updateNotes = useSalon((s) => s.updateNotes);
   const cancel = useSalon((s) => s.cancel);
+  const { can } = useStudioAccess();
 
   const client = a ? clientById(clients, a.clientId) : undefined;
   const svc = a ? services.find((s) => s.id === a.serviceId) : undefined;
@@ -79,11 +81,17 @@ export function AppointmentDrawer({
                 </Button>
               ) : null}
               {a.status === "in-service" || a.status === "arrived" || a.status === "confirmed" ? (
-                <Button size="sm" variant="ink" asChild>
-                  <Link to="/studio/pos" search={{ appointment: a.id }} onClick={() => onClose()}>
-                    Checkout
-                  </Link>
-                </Button>
+                can("pos") ? (
+                  <Button size="sm" variant="ink" asChild>
+                    <Link to="/studio/pos" search={{ appointment: a.id }} onClick={() => onClose()}>
+                      Checkout
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="ink" onClick={() => go("completed")}>
+                    Complete
+                  </Button>
+                )
               ) : null}
               {a.status !== "completed" && a.status !== "cancelled" && a.status !== "no-show" ? (
                 <Button size="sm" variant="outline" onClick={() => go("no-show")}>

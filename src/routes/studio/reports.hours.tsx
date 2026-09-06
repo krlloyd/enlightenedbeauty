@@ -174,7 +174,7 @@ function HoursReportPage() {
         </div>
         <div className="rounded-xl bg-secondary/60 px-4 py-3">
           <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Busiest chair</p>
-          <p className="mt-1 font-serif text-3xl">{hoursRows[0] && hoursRows[0].minutes > 0 ? hoursRows[0].short : "\u2014"}</p>
+          <p className="mt-1 font-serif text-3xl">{hoursRows[0] && hoursRows[0].minutes > 0 ? hoursRows[0].short : "—"}</p>
         </div>
       </div>
 
@@ -244,7 +244,7 @@ function HoursReportPage() {
                 <td className="py-3 pr-4 tabular-nums">{row.visits}</td>
                 <td className="py-3 pr-4 tabular-nums">{hoursBooked(row.minutes)}</td>
                 <td className="py-3 tabular-nums">
-                  {floorMinutes ? `${Math.round((row.minutes / floorMinutes) * 100)}%` : "\u2014"}
+                  {floorMinutes ? `${Math.round((row.minutes / floorMinutes) * 100)}%` : "—"}
                 </td>
               </tr>
             ))}

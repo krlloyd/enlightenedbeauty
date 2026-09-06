@@ -3,6 +3,7 @@ import { Menu } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { SALON, hoursLabels } from "@/lib/catalog";
 import { useSalon } from "@/lib/store";
+import { useStudioLock } from "@/lib/use-studio-lock";
 import { cn } from "@/lib/utils";
 import { SalonLogo } from "./logo";
 import { Button } from "./ui/button";
@@ -19,6 +20,8 @@ const NAV = [
 export function SiteHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
+  const locked = useStudioLock();
+  const studioTo = locked ? "/login" : "/studio";
 
   return (
     <header className="sticky top-0 z-40 border-b border-primary/35 bg-chrome text-chrome-foreground">
@@ -49,7 +52,7 @@ export function SiteHeader() {
             size="sm"
             className="hidden text-chrome-foreground hover:bg-chrome-foreground/10 hover:text-chrome-foreground sm:inline-flex"
           >
-            <Link to="/studio">Studio</Link>
+            <Link to={studioTo}>Studio</Link>
           </Button>
           <Button asChild size="sm">
             <Link to="/book">Book</Link>
@@ -80,7 +83,7 @@ export function SiteHeader() {
                 <Link to="/book" onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-base hover:bg-accent">
                   Book a visit
                 </Link>
-                <Link to="/studio" onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-base hover:bg-accent">
+                <Link to={studioTo} onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-base hover:bg-accent">
                   Studio desk
                 </Link>
               </div>

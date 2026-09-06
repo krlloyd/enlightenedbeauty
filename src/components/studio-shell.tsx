@@ -8,40 +8,54 @@ import {
   Receipt,
   RotateCcw,
   Scissors,
+  Shield,
   Users,
   Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { UserButton } from "@/lib/auth/gates";
+import { ROLE_LABEL, type StudioPermission } from "@/lib/roles";
+import { useStudioAccess } from "@/lib/studio-access";
 import { useSalon } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { DeskAccount } from "./desk-account";
+import { Badge } from "./ui/badge";
 import { SalonLogo } from "./logo";
 import { Button } from "./ui/button";
 
-const ITEMS = [
-  { to: "/studio", label: "Today", icon: LayoutDashboard },
-  { to: "/studio/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/studio/clients", label: "Clients", icon: Users },
-  { to: "/studio/menu", label: "Menu", icon: Scissors },
-  { to: "/studio/pos", label: "Register", icon: Wallet },
-  { to: "/studio/payments", label: "Payments", icon: CreditCard },
-  { to: "/studio/inventory", label: "Stock", icon: Package },
-  { to: "/studio/hours", label: "Hours", icon: Clock },
+const ITEMS: {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  perm: StudioPermission;
+  children?: { to: string; label: string }[];
+}[] = [
+  { to: "/studio", label: "Today", icon: LayoutDashboard, perm: "today" },
+  { to: "/studio/calendar", label: "Calendar", icon: CalendarDays, perm: "calendar" },
+  { to: "/studio/clients", label: "Clients", icon: Users, perm: "clients" },
+  { to: "/studio/menu", label: "Menu", icon: Scissors, perm: "menu" },
+  { to: "/studio/pos", label: "Register", icon: Wallet, perm: "pos" },
+  { to: "/studio/payments", label: "Payments", icon: CreditCard, perm: "payments" },
+  { to: "/studio/inventory", label: "Stock", icon: Package, perm: "inventory" },
+  { to: "/studio/hours", label: "Hours", icon: Clock, perm: "hours" },
   {
     to: "/studio/reports",
     label: "Reports",
     icon: Receipt,
+    perm: "reports",
     children: [
       { to: "/studio/reports", label: "Overview" },
       { to: "/studio/reports/hours", label: "Hours by specialist" },
     ],
   },
-] as const;
+  { to: "/studio/access", label: "Access", icon: Shield, perm: "access" },
+];
 
 export function StudioShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const resetDemo = useSalon((s) => s.resetDemo);
+  const { member, can } = useStudioAccess();
+  const nav = ITEMS.filter((item) => can(item.perm));
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -51,37 +65,44 @@ export function StudioShell({ children }: { children: ReactNode }) {
           <span className="hidden text-[10px] uppercase tracking-[0.22em] text-primary sm:block">Studio</span>
         </Link>
         <div className="flex items-center gap-2">
-          <div className="min-w-0 text-chrome-foreground [&_button]:text-chrome-foreground/80 [&_span]:max-w-[7rem] [&_span]:truncate [&_span]:text-chrome-foreground">
-            <UserButton />
+          {member ? (
+            <Badge variant="primary" className="hidden bg-primary/20 text-primary sm:inline-flex">
+              {ROLE_LABEL[member.role]}
+            </Badge>
+          ) : null}
+          <div className="min-w-0 text-chrome-foreground">
+            <DeskAccount />
           </div>
           <Button asChild variant="ghost" size="sm" className="text-chrome-foreground hover:bg-chrome-foreground/10 hover:text-chrome-foreground">
             <Link to="/">Client site</Link>
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-chrome-foreground/25 bg-transparent text-chrome-foreground hover:bg-chrome-foreground/10"
-            onClick={() => {
-              resetDemo();
-              toast.success("Demo day restored");
-            }}
-          >
-            <RotateCcw className="size-3.5" />
-            Reset
-          </Button>
+          {can("reset") ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-chrome-foreground/25 bg-transparent text-chrome-foreground hover:bg-chrome-foreground/10"
+              onClick={() => {
+                resetDemo();
+                toast.success("Demo day restored");
+              }}
+            >
+              <RotateCcw className="size-3.5" />
+              Reset
+            </Button>
+          ) : null}
         </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col lg:flex-row">
         <nav className="flex gap-1 overflow-x-auto border-b border-border/80 p-2 lg:w-52 lg:flex-col lg:overflow-visible lg:border-r lg:border-b-0 lg:p-3">
-          {ITEMS.map((item) => {
+          {nav.map((item) => {
             const childActive =
-              "children" in item && item.children.some((c) => (c.to === item.to ? pathname === item.to || pathname === `${item.to}/` : pathname === c.to || pathname.startsWith(`${c.to}/`)));
+              "children" in item && item.children?.some((c) => (c.to === item.to ? pathname === item.to || pathname === `${item.to}/` : pathname === c.to || pathname.startsWith(`${c.to}/`)));
             const active =
               item.to === "/studio"
                 ? pathname === "/studio" || pathname === "/studio/"
-                : "children" in item
-                  ? childActive
+                : item.children
+                  ? Boolean(childActive)
                   : pathname === item.to;
             const Icon = item.icon;
             return (
@@ -96,7 +117,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
                   <Icon className="size-4" />
                   {item.label}
                 </Link>
-                {"children" in item
+                {item.children
                   ? item.children.map((child) => {
                       const on = child.to === item.to ? pathname === child.to || pathname === `${child.to}/` : pathname === child.to;
                       return (

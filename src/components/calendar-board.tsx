@@ -15,6 +15,7 @@ import { durationLabel, money, timeLabel } from "@/lib/format";
 import { CATEGORIES } from "@/lib/catalog";
 import { STATUS_LEGEND, statusMeta } from "@/lib/status";
 import { appointmentsOn, clientById, useSalon } from "@/lib/store";
+import { useStudioAccess } from "@/lib/studio-access";
 import type { Appointment } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AppointmentDrawer } from "./appointment-drawer";
@@ -25,9 +26,14 @@ import { Button } from "./ui/button";
 export function CalendarBoard() {
   const appointments = useSalon((s) => s.appointments);
   const clients = useSalon((s) => s.clients);
-  const staff = useSalon((s) => s.staff);
+  const allStaff = useSalon((s) => s.staff);
   const services = useSalon((s) => s.services);
   const weekHours = useSalon((s) => s.hours);
+  const { member } = useStudioAccess();
+  const staff =
+    member?.role === "specialist"
+      ? allStaff.filter((st) => st.id === member.staffId)
+      : allStaff;
   const [day, setDay] = useState(() => nextOpenDay(new Date()));
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [walkIn, setWalkIn] = useState<{ staffId: string; start: Date } | null>(null);
@@ -84,6 +90,11 @@ export function CalendarBoard() {
           <Button className="mt-4" onClick={() => setDay(nextOpenDay(addDays(day, 1), weekHours))}>
             Jump to next open day
           </Button>
+        </div>
+      ) : staff.length === 0 ? (
+        <div className="rounded-2xl bg-card px-5 py-10 text-center shadow-[var(--shadow-border)]">
+          <p className="font-serif text-2xl">No chair linked</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ask the owner to attach this login to a specialist on Access so your column opens.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl shadow-[var(--shadow-border)]">

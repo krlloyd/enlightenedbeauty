@@ -22,6 +22,7 @@ import { Route as PayIndexRouteImport } from './routes/pay.index'
 import { Route as PayAffirmRouteImport } from './routes/pay.affirm'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
+import { Route as StudioAccessRouteImport } from './routes/studio/access'
 import { Route as StudioCalendarRouteImport } from './routes/studio/calendar'
 import { Route as StudioClientsRouteImport } from './routes/studio/clients'
 import { Route as StudioHoursRouteImport } from './routes/studio/hours'
@@ -99,6 +100,11 @@ const StudioIndexRoute = StudioIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioAccessRoute = StudioAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioCalendarRoute = StudioCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/visits': typeof VisitsRoute
   '/pay/affirm': typeof PayAffirmRoute
   '/pay/success': typeof PaySuccessRoute
+  '/studio/access': typeof StudioAccessRoute
   '/studio/calendar': typeof StudioCalendarRoute
   '/studio/clients': typeof StudioClientsRoute
   '/studio/hours': typeof StudioHoursRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/visits': typeof VisitsRoute
   '/pay/affirm': typeof PayAffirmRoute
   '/pay/success': typeof PaySuccessRoute
+  '/studio/access': typeof StudioAccessRoute
   '/studio/calendar': typeof StudioCalendarRoute
   '/studio/clients': typeof StudioClientsRoute
   '/studio/hours': typeof StudioHoursRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/visits': typeof VisitsRoute
   '/pay/affirm': typeof PayAffirmRoute
   '/pay/success': typeof PaySuccessRoute
+  '/studio/access': typeof StudioAccessRoute
   '/studio/calendar': typeof StudioCalendarRoute
   '/studio/clients': typeof StudioClientsRoute
   '/studio/hours': typeof StudioHoursRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/visits'
     | '/pay/affirm'
     | '/pay/success'
+    | '/studio/access'
     | '/studio/calendar'
     | '/studio/clients'
     | '/studio/hours'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/visits'
     | '/pay/affirm'
     | '/pay/success'
+    | '/studio/access'
     | '/studio/calendar'
     | '/studio/clients'
     | '/studio/hours'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/visits'
     | '/pay/affirm'
     | '/pay/success'
+    | '/studio/access'
     | '/studio/calendar'
     | '/studio/clients'
     | '/studio/hours'
@@ -415,6 +427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioIndexRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/access': {
+      id: '/studio/access'
+      path: '/access'
+      fullPath: '/studio/access'
+      preLoaderRoute: typeof StudioAccessRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/calendar': {
       id: '/studio/calendar'
       path: '/calendar'
@@ -524,6 +543,7 @@ const StudioReportsRouteWithChildren = StudioReportsRoute._addFileChildren(
 )
 
 interface StudioRouteChildren {
+  StudioAccessRoute: typeof StudioAccessRoute
   StudioCalendarRoute: typeof StudioCalendarRoute
   StudioClientsRoute: typeof StudioClientsRoute
   StudioHoursRoute: typeof StudioHoursRoute
@@ -536,6 +556,7 @@ interface StudioRouteChildren {
 }
 
 const StudioRouteChildren: StudioRouteChildren = {
+  StudioAccessRoute: StudioAccessRoute,
   StudioCalendarRoute: StudioCalendarRoute,
   StudioClientsRoute: StudioClientsRoute,
   StudioHoursRoute: StudioHoursRoute,
