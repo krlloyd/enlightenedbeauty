@@ -1,5 +1,6 @@
 import { readdirSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
@@ -198,6 +199,13 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+const projectRoot = dirname(fileURLToPath(import.meta.url));
+
+// ExcelJS's package "main" is the Node build (fs/stream). Point Vite at the
+// official browser UMD so client import() doesn't pull Node builtins, and
+// prebundle it so the first Vagaro .xlsx upload doesn't 504 on a stale dep.
+const exceljsBrowser = resolve(projectRoot, "node_modules/exceljs/dist/exceljs.min.js");
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -212,7 +220,19 @@ export default defineConfig(({ command, isPreview }) => ({
     port: 8081,
     strictPort: true,
   },
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    tsconfigPaths: true,
+    alias: {
+      exceljs: exceljsBrowser,
+    },
+  },
+  optimizeDeps: {
+    include: ["exceljs"],
+    needsInterop: ["exceljs"],
+  },
+  ssr: {
+    external: ["exceljs"],
+  },
   plugins: [
     httpsEnforcePlugin(),
     pgliteBootstrapPlugin(),

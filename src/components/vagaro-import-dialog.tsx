@@ -32,13 +32,14 @@ export function VagaroImportDialog({ open, onClose }: { open: boolean; onClose: 
     setError("");
     try {
       const buffer = await file.arrayBuffer();
-      const result = parseVagaroSheet(buffer);
+      const result = await parseVagaroSheet(buffer);
       setFileName(file.name);
       setParsed(result);
       if (result.rows.length === 0 && result.skipped.length) {
         setError(result.skipped[0]?.reason || "No clients found.");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       setParsed(null);
       setError("Could not read that spreadsheet. Export Excel or CSV from Vagaro and try again.");
     } finally {

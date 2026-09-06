@@ -1,5 +1,5 @@
-import * as XLSX from "xlsx";
-import { formatPhone } from "./format";
+import type { Workbook } from "exceljs";
+import { formatPhone } from "./format.ts";
 
 export type VagaroClientRow = {
   name: string;
@@ -20,6 +20,8 @@ export type VagaroParseResult = {
 };
 
 export type ImportMode = "merge" | "skip" | "add";
+
+type ExcelJSModule = { Workbook: new () => Workbook };
 
 const HEADER_ALIASES: Record<string, string[]> = {
   name: ["name", "customer", "customername", "fullname", "client", "clientname"],
@@ -130,19 +132,136 @@ function rowFromRecord(record: Record<string, string>, line: number): VagaroClie
   };
 }
 
-export function parseVagaroSheet(data: ArrayBuffer | string): VagaroParseResult {
-  const workbook = typeof data === "string"
-    ? XLSX.read(data, { type: "string", cellDates: true })
-    : XLSX.read(data, { type: "array", cellDates: true });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  if (!sheet) return { rows: [], skipped: [{ line: 1, reason: "The file has no sheet." }], headers: [] };
+function looksLikeZip(bytes: Uint8Array) {
+  return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b;
+}
 
-  const table = XLSX.utils.sheet_to_json<(string | number | Date | null)[]>(sheet, {
-    header: 1,
-    raw: false,
-    defval: "",
-    blankrows: false,
+function looksLikeOle(bytes: Uint8Array) {
+  return (
+    bytes.length >= 4 &&
+    bytes[0] === 0xd0 &&
+    bytes[1] === 0xcf &&
+    bytes[2] === 0x11 &&
+    bytes[3] === 0xe0
+  );
+}
+
+function excelCellText(value: unknown): unknown {
+  if (value == null) return "";
+  if (value instanceof Date) return value;
+  if (typeof value !== "object") return value;
+  const record = value as {
+    richText?: { text: string }[];
+    text?: unknown;
+    result?: unknown;
+    hyperlink?: string;
+    error?: string;
+  };
+  if (Array.isArray(record.richText)) return record.richText.map((part) => part.text).join("");
+  if (record.text != null) return record.text;
+  if ("result" in record) return excelCellText(record.result);
+  if (record.hyperlink) return record.hyperlink;
+  if (record.error) return "";
+  return "";
+}
+
+function excelNamespace(mod: unknown): ExcelJSModule {
+  let current: unknown = mod;
+  for (let i = 0; i < 4; i++) {
+    if (
+      current &&
+      typeof current === "object" &&
+      "Workbook" in current &&
+      typeof (current as ExcelJSModule).Workbook === "function"
+    ) {
+      return current as ExcelJSModule;
+    }
+    if (current && typeof current === "object" && "default" in current) {
+      current = (current as { default: unknown }).default;
+      continue;
+    }
+    break;
+  }
+  throw new Error("ExcelJS failed to load");
+}
+
+async function loadExcelJS(): Promise<ExcelJSModule> {
+  const mod = await import("exceljs");
+  return excelNamespace(mod);
+}
+
+async function rowsFromXlsx(data: ArrayBuffer): Promise<unknown[][]> {
+  const ExcelJS = await loadExcelJS();
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(data as unknown as Parameters<Workbook["xlsx"]["load"]>[0]);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+  const table: unknown[][] = [];
+  sheet.eachRow({ includeEmpty: false }, (row) => {
+    const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+    table.push(values.map(excelCellText));
   });
+  return table;
+}
+
+function parseDelimited(text: string): string[][] {
+  const sample = text.slice(0, 2048);
+  const delim = sample.split("\t").length > sample.split(",").length ? "\t" : ",";
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let i = 0;
+  let quoted = false;
+  const body = text.replace(/^\uFEFF/, "");
+  while (i < body.length) {
+    const ch = body[i] ?? "";
+    if (quoted) {
+      if (ch === '"') {
+        if (body[i + 1] === '"') {
+          field += '"';
+          i += 2;
+          continue;
+        }
+        quoted = false;
+        i += 1;
+        continue;
+      }
+      field += ch;
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      quoted = true;
+      i += 1;
+      continue;
+    }
+    if (ch === delim) {
+      row.push(field);
+      field = "";
+      i += 1;
+      continue;
+    }
+    if (ch === "\n") {
+      row.push(field);
+      if (row.some((cell) => cell.trim())) rows.push(row);
+      row = [];
+      field = "";
+      i += 1;
+      continue;
+    }
+    if (ch === "\r") {
+      i += 1;
+      continue;
+    }
+    field += ch;
+    i += 1;
+  }
+  row.push(field);
+  if (row.some((cell) => cell.trim())) rows.push(row);
+  return rows;
+}
+
+function parseTable(table: unknown[][]): VagaroParseResult {
   if (table.length === 0) return { rows: [], skipped: [{ line: 1, reason: "The file is empty." }], headers: [] };
 
   let headerIndex = 0;
@@ -174,6 +293,28 @@ export function parseVagaroSheet(data: ArrayBuffer | string): VagaroParseResult 
     else rows.push(parsed);
   }
   return { rows, skipped, headers };
+}
+
+export async function parseVagaroSheet(data: ArrayBuffer | string): Promise<VagaroParseResult> {
+  if (typeof data === "string") return parseTable(parseDelimited(data));
+
+  const bytes = new Uint8Array(data);
+  if (looksLikeOle(bytes)) {
+    return {
+      rows: [],
+      skipped: [{ line: 1, reason: "Old Excel (.xls) isn't supported. Export .xlsx or CSV from Vagaro." }],
+      headers: [],
+    };
+  }
+  if (looksLikeZip(bytes)) {
+    const table = await rowsFromXlsx(data);
+    if (table.length === 0) {
+      return { rows: [], skipped: [{ line: 1, reason: "The file has no sheet." }], headers: [] };
+    }
+    return parseTable(table);
+  }
+  const text = new TextDecoder("utf-8").decode(bytes);
+  return parseTable(parseDelimited(text));
 }
 
 export function matchClient<T extends { name: string; phone: string; email: string }>(
