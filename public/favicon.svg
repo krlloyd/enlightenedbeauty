@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Enlightened Beauty">
+  <rect width="32" height="32" rx="7" fill="#0A0908"/>
+  <g transform="translate(16 16)" fill="#C6A25A">
+    <ellipse rx="3" ry="11.4"/>
+    <ellipse rx="3" ry="11.4" transform="rotate(90)"/>
+    <ellipse rx="2.4" ry="9.6" transform="rotate(45)"/>
+    <ellipse rx="2.4" ry="9.6" transform="rotate(135)"/>
+    <circle r="5.4" fill="#0A0908"/>
+    <circle r="4.15" fill="none" stroke="#C6A25A" stroke-width="1.5"/>
+    <circle r="1.85"/>
+  </g>
+</svg>
